@@ -31,6 +31,8 @@ User input becomes shell syntax: a semicolon ends the ping command and starts an
 
 ## Exploit and verification (b, d)
 
+For a detailed terminal demonstration, follow the [manual curl walkthrough](WALKTHROUGH.md).
+
 Use the dashboard to perform these steps:
 
 1. Select **Vulnerable**, submit `127.0.0.1`, and confirm that ping output appears.
