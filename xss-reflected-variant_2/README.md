@@ -7,17 +7,6 @@
 
 ---
 
-## Table 3. Ownership Declaration
-
-| Member Name | Roll Number | Category | Variant Implemented | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| **Aman** | `IIT2024140` | **Cross-Site Scripting (XSS)** | **Variant 2: Reflected XSS** | **Complete** |
-| *[Member 2]* | *[Roll No]* | SQL Injection | Variant 1: Auth Bypass / Variant 2: UNION Data Extraction | Group Member |
-| *[Member 3]* | *[Roll No]* | OS Command Injection | Variant 1: In-band / Variant 2: Blind | Group Member |
-| *[Member 4]* | *[Roll No]* | Cross-Site Request Forgery | Variant 1: GET-based / Variant 2: POST-based | Group Member |
-
----
-
 ## Quick Start & Installation
 
 ### 1. Requirements
@@ -46,7 +35,7 @@ python3 exploits/test_reflected_xss.py
 
 ---
 
-## Detailed Variant Documentation: Reflected XSS (Aman)
+## Detailed Variant Documentation: Reflected XSS
 
 ### (a) Vulnerable Implementation (Table 2a)
 The application implements an e-commerce product search endpoint located at `/reflected-xss/vulnerable`. The vulnerable code path is identified below:
@@ -145,37 +134,3 @@ As discussed in lecture slides, defense against Cross-Site Scripting relies on d
    In client-side single-page applications, developers must avoid dangerous JavaScript execution sinks such as `element.innerHTML`, `document.write()`, and `eval()`. Instead, safe properties like `element.textContent` or `element.innerText` must be used, which instruct the browser to treat values strictly as text rather than executable markup.
 
 ---
-
-## Video Demonstration Script (2–3 Minutes for Aman)
-
-* **[0:00 - 0:35] Introduction & Vulnerable Code Path (Table 2a)**:
-  > *"Hello everyone and respected instructor Dr. Soumyadev Maity. I am Aman, Roll Number `IIT2024140`. In this video demonstration for our Web Server Security assignment, I will demonstrate Category 3: Cross-Site Scripting, specifically Variant 2: Reflected XSS.  
-  > In our Flask application, we have an e-commerce product search endpoint at `/reflected-xss/vulnerable`. Looking at the code in `app.py`, the server takes the GET parameter `q` and passes it directly to `reflected_vulnerable.html`. In the template, the line `{{ raw_query | safe }}` explicitly disables auto-escaping, reflecting user input verbatim into the response."*
-
-* **[0:35 - 1:15] Demonstrating the Working Exploit (Table 2b)**:
-  > *"Now I will demonstrate the attack. As an attacker, I craft a URL containing this payload: `<script>alert('Session Hijack PoC!\n' + document.cookie)</script>`.  
-  > I send this link to a victim. When the victim clicks the link, the server immediately reflects the query in the response. As you can see on the screen, the browser executes the script under the site's origin and pops up an alert displaying the victim's active session cookie `IIITA_SEC_TOKEN`. We also verify tag bypass using `<img src=x onerror=...>`, which fires immediately."*
-
-* **[1:15 - 1:45] Root Cause Explanation (Table 2c)**:
-  > *"The root cause of this vulnerability is that untrusted user input from an HTTP GET parameter is directly rendered into the HTML document context without context-aware output encoding. The browser's HTML parser cannot distinguish application markup from attacker-supplied script tags, executing the payload in the context of the user's session."*
-
-* **[1:45 - 2:25] Implemented Mitigation Demonstration (Table 2d)**:
-  > *"To fix this, we switch to our mitigated endpoint `/reflected-xss/mitigated`. In the code, we removed the `| safe` bypass, allowing Jinja2's context-aware output encoding to take effect.  
-  > When I submit the exact same malicious payload `<script>alert(...)`, notice that no alert pops up. Inspecting the page source, characters like `<` and `>` have been safely encoded into `&lt;` and `&gt;`. The browser renders the payload harmlessly as text."*
-
-* **[2:25 - 2:50] Other Mitigations in Theory (Table 2e) & Conclusion**:
-  > *"Beyond output encoding, defense-in-depth mitigations from lecture slides include Content Security Policy (CSP) to restrict inline script execution, HttpOnly cookie flags to prevent session hijacking via `document.cookie`, sanitizers like DOMPurify for rich HTML, and using safe DOM sinks like `textContent`. Thank you."*
-
----
-
-## Viva Preparation Cheat Sheet
-
-1. **What is the difference between Reflected XSS and Stored XSS?**
-   * *Answer*: Reflected XSS is non-persistent; the payload is included in the immediate HTTP request (typically URL parameter) and reflected back in that single response. It requires tricking a victim into clicking a malicious link. Stored XSS is persistent; the payload is stored in a database or server storage and executed whenever any user views the affected page.
-2. **Why does HTML entity encoding stop Reflected XSS?**
-   * *Answer*: Browsers identify HTML tags using delimiter characters (`<` and `>`). When these characters are replaced with entities (`&lt;` and `&gt;`), the browser's HTML parser interprets them as literal character data rather than tokenizing them as HTML tags or script blocks.
-3. **Does setting `HttpOnly` on cookies prevent XSS?**
-   * *Answer*: No. `HttpOnly` only prevents JavaScript from accessing `document.cookie`. An attacker with XSS can still perform unauthorized actions on behalf of the user (e.g. submitting forms, transferring funds, stealing CSRF tokens, logging keystrokes, or modifying page DOM). It is a defense-in-depth measure, not a root fix for XSS.
-4. **How does Content Security Policy (CSP) protect against XSS?**
-   * *Answer*: CSP is an HTTP response header that restricts the locations and types of scripts the browser will execute. By setting `script-src 'self'` or using cryptographic nonces (`'nonce-xyz'`), CSP causes the browser to reject injected inline `<script>` tags and event handlers (`onerror`), even if an attacker successfully injects them into HTML.
-
