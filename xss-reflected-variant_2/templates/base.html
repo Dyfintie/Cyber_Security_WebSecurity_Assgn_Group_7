@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}XSS Lab{% endblock %}</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:      #0a0a0f;
+            --surface: #111118;
+            --border:  #222230;
+            --muted:   #3a3a52;
+            --text:    #e8e8f0;
+            --dim:     #6b6b88;
+            --red:     #ff4d4d;
+            --green:   #00c98d;
+            --blue:    #4d94ff;
+            --yellow:  #ffd54f;
+            --mono:    'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+            --sans:    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 14px;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── NAV ── */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            height: 52px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 16px;
+        }
+        .nav-left { display: flex; align-items: center; gap: 24px; }
+        .nav-brand {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+        .nav-links { display: flex; gap: 4px; }
+        .nav-link {
+            font-size: 13px;
+            color: var(--dim);
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .nav-link:hover { color: var(--text); background: var(--border); }
+        .nav-link.active { color: var(--text); background: var(--border); }
+        .nav-right { display: flex; align-items: center; gap: 8px; }
+
+        /* ── PILL / TAG ── */
+        .pill {
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            border: 1px solid;
+        }
+        .pill-red    { color: var(--red);   border-color: rgba(255,77,77,.35);   background: rgba(255,77,77,.07); }
+        .pill-green  { color: var(--green); border-color: rgba(0,201,141,.35);   background: rgba(0,201,141,.07); }
+        .pill-blue   { color: var(--blue);  border-color: rgba(77,148,255,.35);  background: rgba(77,148,255,.07); }
+        .pill-yellow { color: var(--yellow);border-color: rgba(255,213,79,.35);  background: rgba(255,213,79,.07); }
+        .pill-dim    { color: var(--dim);   border-color: var(--border);         background: var(--surface); }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 7px;
+            border: 1px solid transparent;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .btn-red   { background: rgba(255,77,77,.12); border-color: rgba(255,77,77,.3); color: var(--red); }
+        .btn-red:hover { background: rgba(255,77,77,.2); }
+        .btn-green { background: rgba(0,201,141,.12); border-color: rgba(0,201,141,.3); color: var(--green); }
+        .btn-green:hover { background: rgba(0,201,141,.2); }
+        .btn-ghost { background: transparent; border-color: var(--border); color: var(--dim); }
+        .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+        /* ── CARDS / PANELS ── */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+        }
+        .panel-title { font-size: 13px; font-weight: 600; color: var(--text); }
+        .panel-body { padding: 18px; }
+
+        /* ── CODE ── */
+        .code-block {
+            background: #07070c;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-family: var(--mono);
+            font-size: 12.5px;
+            line-height: 1.7;
+            overflow-x: auto;
+            color: #a8b4d0;
+        }
+        .code-block .c-red    { color: #ff6b6b; }
+        .code-block .c-green  { color: #69db7c; }
+        .code-block .c-blue   { color: #74c0fc; }
+        .code-block .c-yellow { color: #ffd43b; }
+        .code-block .c-dim    { color: #495057; }
+
+        /* ── FORM ── */
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #07070c;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .search-input:focus { border-color: var(--blue); }
+        .search-form { display: flex; gap: 8px; }
+        .search-form .search-input { flex: 1; }
+
+        /* ── RESULT BANNER ── */
+        .result-banner {
+            border-radius: 8px;
+            padding: 14px 18px;
+            border: 1px solid;
+            margin-top: 16px;
+        }
+        .result-banner .label {
+            font-size: 11px;
+            font-family: var(--mono);
+            margin-bottom: 4px;
+        }
+        .result-banner .value { font-size: 15px; font-weight: 500; word-break: break-all; }
+        .result-vuln  { background: rgba(255,77,77,.05);  border-color: rgba(255,77,77,.2);  }
+        .result-safe  { background: rgba(0,201,141,.05);  border-color: rgba(0,201,141,.2);  }
+        .result-vuln  .label { color: var(--red);   }
+        .result-safe  .label { color: var(--green); }
+
+        /* ── PAYLOAD LIST ── */
+        .payload-list { display: flex; flex-direction: column; gap: 6px; }
+        .payload-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px 14px;
+            background: #07070c;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-decoration: none;
+            transition: border-color 0.15s;
+            cursor: pointer;
+        }
+        .payload-item:hover { border-color: var(--muted); }
+        .payload-item.vuln:hover { border-color: rgba(255,77,77,.5); }
+        .payload-item.safe:hover { border-color: rgba(0,201,141,.5); }
+        .payload-item .p-title { font-size: 12px; font-weight: 600; color: var(--text); }
+        .payload-item .p-code  { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; }
+        .payload-item .p-badge { align-self: flex-start; }
+
+        /* ── DIVIDER ── */
+        .divider { height: 1px; background: var(--border); margin: 0; }
+
+        /* ── SECTION LABEL ── */
+        .section-label {
+            font-size: 11px;
+            font-family: var(--mono);
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+        }
+
+        /* ── LAYOUT ── */
+        main { flex: 1; padding: 28px 32px; max-width: 1100px; width: 100%; margin: 0 auto; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .stack   { display: flex; flex-direction: column; gap: 16px; }
+        .row     { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 16px 32px;
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--muted);
+            font-family: var(--mono);
+            text-align: center;
+        }
+
+        /* ── MISC ── */
+        a { color: inherit; }
+        .text-red    { color: var(--red);    }
+        .text-green  { color: var(--green);  }
+        .text-blue   { color: var(--blue);   }
+        .text-dim    { color: var(--dim);    }
+        .text-yellow { color: var(--yellow); }
+        .fw-600 { font-weight: 600; }
+        .mono { font-family: var(--mono); }
+        .fs-12 { font-size: 12px; }
+        .fs-11 { font-size: 11px; }
+        .mt-8  { margin-top: 8px; }
+        .mt-16 { margin-top: 16px; }
+        .mt-24 { margin-top: 24px; }
+        .mb-4  { margin-bottom: 4px; }
+        .mb-8  { margin-bottom: 8px; }
+        .gap-8 { gap: 8px; }
+        .w-full { width: 100%; }
+
+        @media (max-width: 700px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            nav { padding: 0 16px; }
+            main { padding: 20px 16px; }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <a class="nav-brand" href="/">
+                <span class="dot"></span>
+                XSS Lab
+            </a>
+            <div class="nav-links">
+                <a class="nav-link {% block nav_home %}{% endblock %}" href="/">Home</a>
+                <a class="nav-link {% block nav_vuln %}{% endblock %}" href="/reflected-xss/vulnerable">Vulnerable</a>
+                <a class="nav-link {% block nav_safe %}{% endblock %}" href="/reflected-xss/mitigated">Mitigated</a>
+            </div>
+        </div>
+        <div class="nav-right">
+            <span class="pill pill-dim mono">Aman · Reflected XSS</span>
+            <a href="/reset-cookie" class="btn btn-ghost btn-sm">↺ Reset Cookie</a>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>IIIT Allahabad · Cyber Security IT-30001 · Dr. Soumyadev Maity · Autumn 2026</footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

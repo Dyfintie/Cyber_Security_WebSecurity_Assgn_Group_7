@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}XSS Lab · Vulnerable{% endblock %}
+{% block nav_vuln %}active{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-24" style="justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+    <div>
+        <div class="row gap-8 mb-4">
+            <span class="pill pill-red">⚠ Vulnerable</span>
+            <span class="mono fs-11 text-dim">/reflected-xss/vulnerable</span>
+        </div>
+        <h1 style="font-size: 20px; font-weight: 700;">Reflected XSS — Attack Demo</h1>
+        <p class="text-dim fs-11 mt-4 mono">Input is reflected into HTML without encoding</p>
+    </div>
+    <a href="/reflected-xss/mitigated" class="btn btn-green btn-sm">✓ Switch to Mitigated →</a>
+</div>
+
+<div class="grid-2" style="align-items: start;">
+
+    <!-- LEFT: Search App + Result -->
+    <div class="stack">
+        <p class="section-label">Live search (victim's browser)</p>
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">🛒 Product Search</span>
+                <span class="pill pill-red">Unprotected</span>
+            </div>
+            <div class="panel-body">
+                <form method="GET" action="/reflected-xss/vulnerable" class="search-form">
+                    <input type="text" name="q" class="search-input"
+                           placeholder="Search products or paste a payload..."
+                           value="{{ raw_query | e if raw_query else '' }}"
+                           autocomplete="off" spellcheck="false">
+                    <button type="submit" class="btn btn-red">Search</button>
+                </form>
+
+                {% if raw_query %}
+                <div class="result-banner result-vuln mt-16">
+                    <div class="label mono">Search results for:</div>
+                    <!-- ██ VULNERABILITY: | safe disables Jinja2 auto-escaping ██ -->
+                    <div class="value">{{ raw_query | safe }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Flaw explanation -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Flawed Code (Table 2a)</span>
+            </div>
+            <div class="panel-body stack" style="gap: 10px;">
+                <div class="code-block">
+<span class="c-dim"># app.py</span>
+<span class="c-blue">@app.route</span>(<span class="c-yellow">'/reflected-xss/vulnerable'</span>)
+<span class="c-blue">def</span> <span class="c-green">vulnerable_reflected_xss</span>():
+    query = request.args.get(<span class="c-yellow">'q'</span>, <span class="c-yellow">''</span>)
+    <span class="c-red"># ← user input passed raw, no sanitization</span>
+    <span class="c-blue">return</span> render_template(<span class="c-yellow">'...'</span>, raw_query=query)</div>
+                <div class="code-block">
+<span class="c-dim">&lt;!-- template --&gt;</span>
+<span class="c-dim">&lt;div&gt;</span>&#123;&#123; raw_query <span class="c-red">| safe</span> &#125;&#125;<span class="c-dim">&lt;/div&gt;</span>
+<span class="c-red">         ↑ bypasses all escaping</span></div>
+                <p class="text-dim fs-11">
+                    Root cause: untrusted <span class="mono text-yellow">?q=</span> parameter echoed
+                    into the HTML stream. The browser parses it as markup.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Payload launcher -->
+    <div class="stack">
+        <p class="section-label">One-click exploit payloads (Table 2b)</p>
+
+        <div class="payload-list">
+            <!-- P1 -->
+            <a class="payload-item vuln"
+               href="/reflected-xss/vulnerable?q=%3Cscript%3Ealert%28%27XSS+by+Aman+%E2%80%94+IIIT+Allahabad%27%29%3C%2Fscript%3E">
+                <div class="row" style="justify-content: space-between;">
+                    <span class="p-title">① Basic Alert PoC</span>
+                    <span class="pill pill-red p-badge">click to run</span>
+                </div>
+                <div class="p-code">&lt;script&gt;alert('XSS by Aman — IIIT Allahabad')&lt;/script&gt;</div>
+            </a>
+
+            <!-- P2 -->
+            <a class="payload-item vuln"
+               href="/reflected-xss/vulnerable?q=%3Cscript%3Ealert%28%27Session+Cookie+Stolen%21%5Cn%5Cn%27+%2B+document.cookie%29%3C%2Fscript%3E">
+                <div class="row" style="justify-content: space-between;">
+                    <span class="p-title">② Session Cookie Theft</span>
+                    <span class="pill pill-red p-badge">click to run</span>
+                </div>
+                <div class="p-code">&lt;script&gt;alert('Cookie: ' + document.cookie)&lt;/script&gt;</div>
+                <div class="p-code text-dim" style="font-size:10px;">↳ Shows active session_token in the alert — high impact</div>
+            </a>
+
+            <!-- P3 -->
+            <a class="payload-item vuln"
+               href="/reflected-xss/vulnerable?q=%3Cimg+src%3Dx+onerror%3D%22alert%28%27XSS+via+img+onerror%3A+%27%2Bdocument.domain%29%22%3E">
+                <div class="row" style="justify-content: space-between;">
+                    <span class="p-title">③ &lt;img onerror&gt; Filter Bypass</span>
+                    <span class="pill pill-red p-badge">click to run</span>
+                </div>
+                <div class="p-code">&lt;img src=x onerror="alert('XSS: '+document.domain)"&gt;</div>
+                <div class="p-code text-dim" style="font-size:10px;">↳ Bypasses naive &lt;script&gt;-only filters</div>
+            </a>
+
+            <!-- P4 -->
+            <a class="payload-item vuln"
+               href="/reflected-xss/vulnerable?q=%3Ch1+style%3D%22color%3Ared%3Bfont-size%3A2em%3Bpadding%3A12px%3Bborder%3A2px+solid+red%22%3ESITE+DEFACED+BY+AMAN%3C%2Fh1%3E">
+                <div class="row" style="justify-content: space-between;">
+                    <span class="p-title">④ HTML Injection / UI Defacement</span>
+                    <span class="pill pill-yellow p-badge">HTML only</span>
+                </div>
+                <div class="p-code">&lt;h1 style="color:red"&gt;SITE DEFACED BY AMAN&lt;/h1&gt;</div>
+            </a>
+        </div>
+
+        <!-- Attack flow diagram -->
+        <div class="panel mt-8">
+            <div class="panel-header"><span class="panel-title">Attack Flow</span></div>
+            <div class="panel-body">
+                <div class="code-block" style="color: var(--dim); line-height: 2;">
+<span class="c-red">Attacker</span>  crafts malicious URL
+    ↓
+<span class="c-yellow">Victim</span>    clicks phishing link
+    ↓
+<span class="c-blue">Server</span>    reflects <span class="c-red">?q=&lt;script&gt;</span> into HTML response
+    ↓
+<span class="c-yellow">Browser</span>   parses → executes script in victim's session
+    ↓
+<span class="c-red">Impact</span>    cookie theft · defacement · keylogging</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

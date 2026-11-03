@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}XSS Lab · Mitigated{% endblock %}
+{% block nav_safe %}active{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-24" style="justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+    <div>
+        <div class="row gap-8 mb-4">
+            <span class="pill pill-green">✓ Mitigated</span>
+            <span class="mono fs-11 text-dim">/reflected-xss/mitigated</span>
+        </div>
+        <h1 style="font-size: 20px; font-weight: 700;">Reflected XSS — Mitigated</h1>
+        <p class="text-dim fs-11 mt-4 mono">Context-aware HTML entity encoding active</p>
+    </div>
+    <a href="/reflected-xss/vulnerable" class="btn btn-red btn-sm">⚠ Switch to Vulnerable →</a>
+</div>
+
+<div class="grid-2" style="align-items: start;">
+
+    <!-- LEFT: Search App (Secured) -->
+    <div class="stack">
+        <p class="section-label">Same search — now secured</p>
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">🛒 Product Search</span>
+                <span class="pill pill-green">Output Encoded</span>
+            </div>
+            <div class="panel-body">
+                <form method="GET" action="/reflected-xss/mitigated" class="search-form">
+                    <input type="text" name="q" class="search-input"
+                           placeholder="Try the same attack payload here..."
+                           value="{{ safe_query | e if safe_query else '' }}"
+                           autocomplete="off" spellcheck="false">
+                    <button type="submit" class="btn btn-green">Search</button>
+                </form>
+
+                {% if safe_query %}
+                <div class="result-banner result-safe mt-16">
+                    <div class="label mono">Search results for (safely encoded):</div>
+                    <!-- ✓ MITIGATION: Jinja2 auto-escaping active — no | safe filter -->
+                    <div class="value">{{ safe_query }}</div>
+                </div>
+
+                <div class="panel mt-16" style="background: #07070c;">
+                    <div class="panel-header">
+                        <span class="panel-title fs-12 text-dim mono">Wire HTML sent to browser</span>
+                        <span class="pill pill-green">Encoded</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="code-block" style="border: none; padding: 0; background: transparent; color: var(--green);">
+&lt;div&gt;{{ safe_query | e }}&lt;/div&gt;
+                        </div>
+                        <p class="text-dim fs-11 mt-8">
+                            Characters like <span class="mono text-yellow">&lt;</span> become
+                            <span class="mono text-green">&amp;lt;</span> — the browser
+                            renders text, never executes code.
+                        </p>
+                    </div>
+                </div>
+                {% else %}
+                <div style="margin-top: 20px; text-align: center; color: var(--dim); font-size: 13px; padding: 24px 0;">
+                    Paste any payload from the Vulnerable page here. It will be neutralised.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Fix explanation -->
+        <div class="panel">
+            <div class="panel-header"><span class="panel-title">The Fix (Table 2d)</span></div>
+            <div class="panel-body">
+                <p class="section-label mb-8">One-line change</p>
+                <div class="code-block">
+<span class="c-dim">&lt;!-- ❌ Vulnerable --&gt;</span>
+<span class="c-dim">&lt;div&gt;</span>{{ '{{' }} raw_query <span class="c-red">| safe</span> {{ '}}' }}<span class="c-dim">&lt;/div&gt;</span>
+
+<span class="c-dim">&lt;!-- ✓ Mitigated --&gt;</span>
+<span class="c-dim">&lt;div&gt;</span>{{ '{{' }} <span class="c-green">safe_query</span> {{ '}}' }}<span class="c-dim">&lt;/div&gt;</span>
+<span class="c-dim">        <span class="c-green">↑ Jinja2 escapes automatically</span></span></div>
+
+                <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 120px; padding: 10px 14px; background: rgba(255,77,77,.06); border: 1px solid rgba(255,77,77,.2); border-radius: 8px;">
+                        <div class="mono fs-11 text-red mb-4">Input</div>
+                        <div class="mono fs-11">&lt;script&gt;alert(1)&lt;/script&gt;</div>
+                    </div>
+                    <div style="display: flex; align-items: center; color: var(--dim);">→</div>
+                    <div style="flex: 1; min-width: 120px; padding: 10px 14px; background: rgba(0,201,141,.06); border: 1px solid rgba(0,201,141,.2); border-radius: 8px;">
+                        <div class="mono fs-11 text-green mb-4">Output (wire)</div>
+                        <div class="mono fs-11">&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Test payloads + Theory -->
+    <div class="stack">
+        <p class="section-label">Verify the same payloads are blocked</p>
+
+        <div class="payload-list">
+            <a class="payload-item safe"
+               href="/reflected-xss/mitigated?q=%3Cscript%3Ealert%28%27XSS+by+Aman+%E2%80%94+IIIT+Allahabad%27%29%3C%2Fscript%3E">
+                <div class="row" style="justify-content: space-between;">
+                    <span class="p-title">① Basic Alert PoC</span>
+                    <span class="pill pill-green">blocked</span>
+                </div>
+                <div class="p-code">&lt;script&gt;alert('XSS by Aman')&lt;/script&gt;</div>
+            </a>
+            <a class="payload-item safe"
+               href="/reflected-xss/mitigated?q=%3Cscript%3Ealert%28%27Session+Cookie+Stolen%21%5Cn%5Cn%27+%2B+document.cookie%29%3C%2Fscript%3E">
+                <div class="row" style="justify-content: space-between;">
+                    <span class="p-title">② Session Cookie Theft</span>
+                    <span class="pill pill-green">blocked</span>
+                </div>
+                <div class="p-code">&lt;script&gt;alert(document.cookie)&lt;/script&gt;</div>
+            </a>
+            <a class="payload-item safe"
+               href="/reflected-xss/mitigated?q=%3Cimg+src%3Dx+onerror%3D%22alert%28%27XSS+via+img+onerror%3A+%27%2Bdocument.domain%29%22%3E">
+                <div class="row" style="justify-content: space-between;">
+                    <span class="p-title">③ &lt;img onerror&gt; Bypass</span>
+                    <span class="pill pill-green">blocked</span>
+                </div>
+                <div class="p-code">&lt;img src=x onerror="alert(document.domain)"&gt;</div>
+            </a>
+        </div>
+
+        <!-- Theory (Table 2e) -->
+        <div class="panel mt-8">
+            <div class="panel-header">
+                <span class="panel-title">Other Mitigations — Theory (Table 2e)</span>
+            </div>
+            <div class="panel-body stack" style="gap: 14px;">
+                {% set theory = [
+                    ('Content Security Policy',
+                     "Content-Security-Policy: script-src 'self'",
+                     "Blocks inline <script> execution even if injected into HTML."),
+                    ('HttpOnly Cookie Flag',
+                     "Set-Cookie: session=...; HttpOnly",
+                     "Prevents document.cookie access from JavaScript. Neutralises session theft."),
+                    ('HTML Sanitizers',
+                     "DOMPurify.sanitize(input) — client side",
+                     "Strips dangerous tags (<script>, onerror=) while keeping safe markup."),
+                    ('Safe DOM Sinks',
+                     "el.textContent = input  ✓  (not innerHTML)",
+                     "Treats value as text, never as markup. Prevents DOM-based XSS."),
+                ] %}
+                {% for title, code, desc in theory %}
+                <div>
+                    <div class="fw-600 fs-12" style="color: var(--text); margin-bottom: 4px;">{{ title }}</div>
+                    <div class="code-block" style="padding: 7px 12px; font-size: 11px; margin-bottom: 4px;">{{ code }}</div>
+                    <div class="text-dim" style="font-size: 11px;">{{ desc }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -26,5 +26,6 @@ Group assignment Demonstrating SQL injection, OS command injection, cross-site s
 | [OS command injection: in-band output](os-command-injection-variant_1/README.md) | Python, Flask, system `ping` | http://127.0.0.1:5000 |
 | [CSRF: POST-based forged action](csrf-post-variant_2/README.md) | Python, Flask (bank and attacker apps) | Bank: http://localhost:3000; attacker: http://localhost:3001 |
 | [CSRF: GET-based forged action](csrf-get-variant_1/README.md) | Node.js | Portal: http://localhost:3000; attacker: http://localhost:4000 |
+| [XSS: Reflected XSS](xss-reflected-variant_2/README.md) | Python, Flask | http://127.0.0.1:8080 |
 
 Each project README contains its setup instructions, vulnerable code path, exact exploit, root cause, implemented mitigation, and mitigation theory. 
