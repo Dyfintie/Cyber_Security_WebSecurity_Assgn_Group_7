@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OS Command Injection Lab | IIITA IT-30001</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-danger: #f85149;
+      --accent-success: #3fb950;
+      --accent-warn: #d29922;
+      --terminal-bg: #030712;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .header-title h1 {
+      font-size: 1.35rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 12px;
+      text-transform: uppercase;
+    }
+
+    .badge-iiita {
+      background: #1f6feb33;
+      color: var(--accent);
+      border: 1px solid #1f6feb;
+    }
+
+    .badge-vuln {
+      background: #f8514922;
+      color: var(--accent-danger);
+      border: 1px solid var(--accent-danger);
+    }
+
+    .badge-safe {
+      background: #3fb95022;
+      color: var(--accent-success);
+      border: 1px solid var(--accent-success);
+    }
+
+    .header-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Mode selector tabs */
+    .mode-switch {
+      display: flex;
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 8px 14px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .mode-btn.active.vuln {
+      background: var(--accent-danger);
+      color: #fff;
+    }
+
+    .mode-btn.active.mitigated {
+      background: var(--accent-success);
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--terminal-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    .quick-payloads {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .payload-pill {
+      background: #21262d;
+      border: 1px solid var(--border);
+      color: #8b949e;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .payload-pill:hover {
+      background: #30363d;
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--accent);
+      color: #0d1117;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: opacity 0.2s;
+    }
+
+    .btn-submit:hover {
+      opacity: 0.9;
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Terminal output */
+    .terminal {
+      background: var(--terminal-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      min-height: 250px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #21262d;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    .stdout-text {
+      color: #58a6ff;
+    }
+
+    .error-text {
+      color: var(--accent-danger);
+    }
+
+    .cmd-executed {
+      color: var(--accent-warn);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    /* Tabs for documentation & code */
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab-nav-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-nav-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    pre code {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      background: #090d16;
+      padding: 12px;
+      border-radius: 6px;
+      display: block;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      color: #e6edf3;
+    }
+
+    .table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+
+    .table-custom th, .table-custom td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    .table-custom th {
+      background: #21262d;
+      color: #fff;
+    }
+
+    .info-box {
+      background: #161b22;
+      border-left: 4px solid var(--accent);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin: 12px 0;
+      font-size: 0.9rem;
+    }
+
+    .danger-box {
+      background: #2a1215;
+      border-left: 4px solid var(--accent-danger);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin: 12px 0;
+      font-size: 0.9rem;
+    }
+
+    .success-box {
+      background: #102419;
+      border-left: 4px solid var(--accent-success);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin: 12px 0;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-title">
+        <h1>
+          <span>🛡️ Network Host Diagnostic Tool</span>
+          <span class="badge badge-iiita">IIITA IT-30001</span>
+        </h1>
+      </div>
+      <div class="header-meta">
+        <div><strong>Course:</strong> Cyber Security (IT-30001)</div>
+        <div><strong>Instructor:</strong> Dr. Soumyadev Maity</div>
+        <div><strong>Variant:</strong> In-Band OS Command Injection</div>
+      </div>
+    </header>
+
+    <div class="grid-2">
+      <!-- Left Column: Controls & Input -->
+      <div class="card">
+        <div class="card-title">
+          <span>Target Configuration</span>
+          <span id="current-mode-badge" class="badge badge-vuln">VULNERABLE MODE</span>
+        </div>
+
+        <div class="mode-switch">
+          <button type="button" id="btn-vuln-mode" class="mode-btn active vuln" onclick="setMode('vulnerable')">
+            ⚠️ Vulnerable Service (shell=True)
+          </button>
+          <button type="button" id="btn-safe-mode" class="mode-btn" onclick="setMode('mitigated')">
+            🛡️ Mitigated Service (shell=False + Regex)
+          </button>
+        </div>
+
+        <form id="ping-form" onsubmit="executePing(event)">
+          <div class="form-group">
+            <label for="target-input">Target Hostname or IP Address:</label>
+            <input type="text" id="target-input" name="target" placeholder="e.g. 127.0.0.1 or 127.0.0.1; whoami" required autocomplete="off" />
+            
+            <div style="margin-top: 10px;">
+              <label>Quick Exploit Payloads (Click to insert):</label>
+              <div class="quick-payloads">
+                <span class="payload-pill" onclick="setPayload('127.0.0.1')">127.0.0.1 (Benign)</span>
+                <span class="payload-pill" onclick="setPayload('127.0.0.1; whoami')">; whoami</span>
+                <span class="payload-pill" onclick="setPayload('127.0.0.1; id; uname -a')">; id; uname -a</span>
+                <span class="payload-pill" onclick="setPayload('127.0.0.1; cat /etc/passwd | head -n 5')">; cat /etc/passwd</span>
+                <span class="payload-pill" onclick="setPayload('127.0.0.1 && ps aux | head -n 6')">&amp;&amp; ps aux</span>
+                <span class="payload-pill" onclick="setPayload('127.0.0.1; sleep 3')">; sleep 3 (Blind test)</span>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" id="submit-btn" class="btn-submit">
+            🚀 Send Diagnostic Request
+          </button>
+        </form>
+      </div>
+
+      <!-- Right Column: Terminal Output -->
+      <div class="card">
+        <div class="card-title">
+          <span>Execution Output (In-Band Response)</span>
+          <span id="exec-status" style="font-size: 0.8rem; color: var(--text-muted);">Ready</span>
+        </div>
+
+        <div class="terminal" id="terminal-screen">
+          <div class="terminal-header">
+            <div>
+              <span class="terminal-dot dot-red"></span>
+              <span class="terminal-dot dot-yellow"></span>
+              <span class="terminal-dot dot-green"></span>
+              <span>bash console (stdout / stderr)</span>
+            </div>
+            <div id="status-tag">STANDBY</div>
+          </div>
+          <div id="executed-cmd" class="cmd-executed"></div>
+          <div id="terminal-body" class="stdout-text">Waiting for diagnostic request...
+Select a payload above and click "Send Diagnostic Request".</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Section: Detailed Documentation & Defense Tabs -->
+    <div class="card">
+      <div class="tabs-nav">
+        <button class="tab-nav-btn active" onclick="switchTab('code-tab')">Code Comparison (Vulnerable vs Mitigated)</button>
+        <button class="tab-nav-btn" onclick="switchTab('rootcause-tab')">Root Cause Analysis</button>
+        <button class="tab-nav-btn" onclick="switchTab('theory-tab')">Mitigation Alternatives (Theory)</button>
+        <button class="tab-nav-btn" onclick="switchTab('viva-tab')">Video & Viva Cheatsheet</button>
+      </div>
+
+      <!-- TAB 1: Code Comparison -->
+      <div id="code-tab" class="tab-content active">
+        <div class="grid-2">
+          <div>
+            <h4 style="color: var(--accent-danger); margin-bottom: 8px;">(a) Vulnerable Implementation</h4>
+            <div class="danger-box">
+              <strong>Flaw:</strong> Unsanitized string interpolation directly inside <code>shell=True</code>.
+            </div>
+            <pre><code># Vulnerable Code Path:
+command = f"ping -c 2 {target}"
+process = subprocess.run(
+    command,
+    shell=True,          # Invokes /bin/sh -c
+    capture_output=True, # In-band output capture
+    text=True,
+    timeout=6
+)
+return jsonify({"output": process.stdout + process.stderr})</code></pre>
+          </div>
+          <div>
+            <h4 style="color: var(--accent-success); margin-bottom: 8px;">(d) Mitigated Implementation</h4>
+            <div class="success-box">
+              <strong>Fix:</strong> Allow-list regex + Parameterized Argument Vector (<code>shell=False</code>).
+            </div>
+            <pre><code># Step 1: Strict Allow-List Regex Validation
+allowlist_regex = r"^[a-zA-Z0-9.-]+$"
+if not re.match(allowlist_regex, target):
+    return jsonify({"error": "Illegal input detected"}), 400
+
+# Step 2: Parameterized Execution (Avoid Shell)
+cmd_args = ["ping", "-c", "2", target]
+process = subprocess.run(
+    cmd_args,
+    shell=False,         # OS execve directly, NO shell parsing
+    capture_output=True,
+    text=True,
+    timeout=6
+)</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Root Cause -->
+      <div id="rootcause-tab" class="tab-content">
+        <div class="card-title">Root Cause (Table 2 (c))</div>
+        <div class="info-box">
+          <strong>Why this vulnerability exists:</strong><br>
+          1. <strong>Direct Concatenation:</strong> User input from the HTTP request is concatenated directly into a system command string without sanitization or type constraint.<br>
+          2. <strong>Shell Interpreter Invocation:</strong> The process is invoked with <code>shell=True</code>, delegating execution to the system shell (<code>/bin/sh -c</code>). The shell parses metacharacters such as <code>;</code>, <code>&amp;</code>, <code>|</code>, and <code>$()</code> as command delimiters rather than literal text.<br>
+          3. <strong>In-Band Leakage:</strong> Both standard output (stdout) and standard error (stderr) of the spawned child process are piped directly into the HTTP response returned to the client, providing immediate visibility of the injected command's output.
+        </div>
+      </div>
+
+      <!-- TAB 3: Theory of Other Mitigations -->
+      <div id="theory-tab" class="tab-content">
+        <div class="card-title">Other Mitigations from Lecture Slides (Table 2 (e))</div>
+        <p style="margin-bottom: 12px; color: var(--text-muted);">
+          As required by the assignment guidelines, the following 4 defense strategies from the course slides protect against OS command injection:
+        </p>
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Mitigation Strategy</th>
+              <th>Mechanism of Action</th>
+              <th>Why It Works</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Avoid the Shell (Native APIs)</strong></td>
+              <td>Use native programming language libraries (e.g. Python <code>socket</code>, <code>scapy</code>, or <code>ping3</code>) instead of calling OS shell utilities.</td>
+              <td>Completely eliminates OS command execution from the codebase. No shell process or external binary is ever invoked.</td>
+            </tr>
+            <tr>
+              <td><strong>2. Parameterized Execution (Argument Vector)</strong></td>
+              <td>Pass binary name and arguments as a discrete list/array (e.g., <code>subprocess.run(["ping", "-c", "2", target], shell=False)</code>).</td>
+              <td>Arguments are passed directly to the kernel <code>execve</code> system call. Shell metacharacters are treated purely as literal byte values and never parsed as syntax.</td>
+            </tr>
+            <tr>
+              <td><strong>3. Allow-list Validation</strong></td>
+              <td>Validate incoming input against a strict whitelist pattern (e.g., regex <code>^[a-zA-Z0-9.-]+$</code> or IP validation) before processing.</td>
+              <td>Rejects any unexpected input containing characters like <code>; &amp; | ` $ &gt; &lt; \n \r</code> before it ever reaches execution logic.</td>
+            </tr>
+            <tr>
+              <td><strong>4. Principle of Least Privilege &amp; Sandboxing</strong></td>
+              <td>Run the web process under a dedicated unprivileged system account (e.g., <code>www-data</code>) in a chroot jail, AppArmor/seccomp profile, or container.</td>
+              <td>Even if an attacker achieves arbitrary command execution, their permissions are restricted, preventing privilege escalation and access to sensitive files.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TAB 4: Viva & Video Guide -->
+      <div id="viva-tab" class="tab-content">
+        <div class="card-title">Video Recording &amp; Viva Cheatsheet</div>
+        <div class="info-box">
+          <strong>Recommended 2.5-Minute Video Flow:</strong><br>
+          1. <strong>Intro (15s):</strong> State Name, Roll Number, IIITA IT-30001, Category: <em>OS Command Injection</em>, Variant: <em>In-Band (Command output returned)</em>.<br>
+          2. <strong>Vulnerable Code (30s):</strong> Show <code>app.py</code> highlighting <code>f"ping -c 2 {target}"</code> and <code>shell=True</code>.<br>
+          3. <strong>Live Exploit Demo (45s):</strong> Switch to web page in Vulnerable mode. Run benign <code>127.0.0.1</code>, then exploit <code>127.0.0.1; whoami; id; uname -a</code>. Point to the injected command output returned in the terminal.<br>
+          4. <strong>Mitigation Demo (30s):</strong> Switch to Mitigated mode. Submit the exact same payload <code>127.0.0.1; whoami; id; uname -a</code>. Show the request blocked by the allow-list filter and explain <code>shell=False</code> parameterization.<br>
+          5. <strong>Theory Recap (30s):</strong> Briefly state the 4 defense pillars (Avoid shell, Parameterized vector, Allow-list validation, Least privilege).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = "vulnerable";
+
+    function setMode(mode) {
+      currentMode = mode;
+      const btnVuln = document.getElementById("btn-vuln-mode");
+      const btnSafe = document.getElementById("btn-safe-mode");
+      const badge = document.getElementById("current-mode-badge");
+
+      if (mode === "vulnerable") {
+        btnVuln.className = "mode-btn active vuln";
+        btnSafe.className = "mode-btn";
+        badge.className = "badge badge-vuln";
+        badge.innerText = "VULNERABLE MODE";
+      } else {
+        btnVuln.className = "mode-btn";
+        btnSafe.className = "mode-btn active mitigated";
+        badge.className = "badge badge-safe";
+        badge.innerText = "MITIGATED MODE";
+      }
+    }
+
+    function setPayload(payload) {
+      document.getElementById("target-input").value = payload;
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-nav-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+      
+      event.target.classList.add("active");
+      document.getElementById(tabId).classList.add("active");
+    }
+
+    async function executePing(e) {
+      e.preventDefault();
+      const targetInput = document.getElementById("target-input");
+      const target = targetInput.value.trim();
+      const submitBtn = document.getElementById("submit-btn");
+      const termBody = document.getElementById("terminal-body");
+      const execCmd = document.getElementById("executed-cmd");
+      const statusTag = document.getElementById("status-tag");
+      const execStatus = document.getElementById("exec-status");
+
+      if (!target) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = "⏳ Executing diagnostic...";
+      statusTag.innerText = "RUNNING";
+      statusTag.style.color = "var(--accent-warn)";
+      execStatus.innerText = "Sending request to /api/ping...";
+      termBody.className = "stdout-text";
+      termBody.innerText = "Executing probe against host: " + target + "\nPlease wait...\n";
+      execCmd.innerText = "";
+
+      try {
+        const response = await fetch("/api/ping", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: target, mode: currentMode })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === "success") {
+          statusTag.innerText = "200 OK";
+          statusTag.style.color = "var(--accent-success)";
+          execStatus.innerText = "Execution completed successfully";
+          execCmd.innerText = "$ " + (data.executed_command || "command executed");
+          termBody.className = "stdout-text";
+          termBody.innerText = data.output || "(Command executed with no standard output)";
+        } else if (data.status === "blocked") {
+          statusTag.innerText = "400 BLOCKED";
+          statusTag.style.color = "var(--accent-danger)";
+          execStatus.innerText = "Security Filter Active";
+          execCmd.innerText = "[FILTER_ACTIVE] Execution aborted";
+          termBody.className = "error-text";
+          termBody.innerText = data.message + "\n\n" + data.output;
+        } else {
+          statusTag.innerText = "EXECUTION ERROR";
+          statusTag.style.color = "var(--accent-danger)";
+          execStatus.innerText = "Error response from server";
+          execCmd.innerText = "$ " + (data.executed_command || "execution failed");
+          termBody.className = "error-text";
+          termBody.innerText = data.output || data.message || "Unknown error";
+        }
+      } catch (err) {
+        statusTag.innerText = "NETWORK ERROR";
+        statusTag.style.color = "var(--accent-danger)";
+        execStatus.innerText = "Network / Request failed";
+        termBody.className = "error-text";
+        termBody.innerText = "Failed to reach server: " + err.message;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "🚀 Send Diagnostic Request";
+      }
+    }
+  </script>
+</body>
+</html>
