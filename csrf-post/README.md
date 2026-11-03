@@ -9,7 +9,7 @@ A deliberately vulnerable mini banking app plus an attacker-owned web page that 
 ## 1. Quick start
 
 ```bash
-cd csrf
+cd csrf-post
 ./run.sh        # starts both servers; bank runs VULNERABLE (the shipped state)
 ```
 
@@ -44,7 +44,7 @@ First run creates a local `.venv` and installs Flask automatically (`pip install
 ### Code map
 
 ```
-csrf/
+csrf-post/
 ├── bank/
 │   ├── app.py                  # vulnerable Flask app, port 3000
 │   ├── templates/              # base / login / dashboard / blocked(403)

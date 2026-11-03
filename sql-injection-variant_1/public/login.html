@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Portal — Login</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      color: #e0e0e0;
+    }
+
+    /* ── Card ──────────────────────────────────────────────── */
+    .card {
+      background: rgba(255 255 255 / 0.06);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255 255 255 / 0.12);
+      border-radius: 16px;
+      padding: 2.5rem 2.2rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 32px rgba(0 0 0 / 0.45);
+    }
+
+    /* ── Mode badge ───────────────────────────────────────── */
+    .mode-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 1.2rem;
+    }
+    .mode-badge.vulnerable { background: #e53e3e; color: #fff; }
+    .mode-badge.secure     { background: #38a169; color: #fff; }
+
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 0.85rem; color: #a0a0b8; margin-bottom: 1.8rem; }
+
+    /* ── Form ──────────────────────────────────────────────── */
+    label { display: block; font-size: 0.82rem; margin-bottom: 4px; color: #c0c0d0; }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(255 255 255 / 0.15);
+      border-radius: 8px;
+      background: rgba(255 255 255 / 0.07);
+      color: #f0f0f0;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #7c3aed; }
+
+    button {
+      width: 100%;
+      padding: 0.7rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+
+    /* ── Result banner ────────────────────────────────────── */
+    .result {
+      margin-top: 1.2rem;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .result.success { background: rgba(56 161 105 / 0.25); border: 1px solid #38a169; }
+    .result.error   { background: rgba(229 62 62 / 0.2);   border: 1px solid #e53e3e; }
+
+    /* ── Exploit hints ────────────────────────────────────── */
+    .hint-box {
+      margin-top: 1.8rem;
+      padding: 1rem;
+      border-radius: 8px;
+      background: rgba(255 255 255 / 0.04);
+      border: 1px dashed rgba(255 255 255 / 0.15);
+      font-size: 0.78rem;
+      color: #a0a0b8;
+      line-height: 1.6;
+    }
+    .hint-box strong { color: #e0e0f0; }
+    code {
+      background: rgba(0 0 0 / 0.35);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      color: #f6ad55;
+    }
+
+    /* ── Query display ────────────────────────────────────── */
+    .query-display {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-family: 'Consolas', monospace;
+      font-size: 0.78rem;
+      color: #a0f0a0;
+      word-break: break-all;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="mode-badge vulnerable" id="modeBadge">⏳ Checking Mode...</div>
+    <h1>🏢 Employee Portal</h1>
+    <p class="subtitle">Sign in to access the dashboard</p>
+
+    <form id="loginForm" autocomplete="off">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" placeholder="e.g. admin" />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="••••••••" />
+
+      <button type="submit">Sign In</button>
+    </form>
+
+    <!-- Query that was executed (shown after submit) -->
+    <div class="query-display" id="queryDisplay"></div>
+
+    <!-- Login result -->
+    <div class="result" id="result"></div>
+
+    <!-- Helpful hints for the demo -->
+    <div class="hint-box">
+      <strong>💡 Exploit payloads to try:</strong><br><br>
+
+      <strong>1.</strong> Bypass as admin:<br>
+      &nbsp;&nbsp;Username: <code>admin' --</code><br>
+      &nbsp;&nbsp;Password: <code>anything</code><br><br>
+
+      <strong>2.</strong> Bypass without knowing a username:<br>
+      &nbsp;&nbsp;Username: <code>' OR 1=1 --</code><br>
+      &nbsp;&nbsp;Password: <code>anything</code><br><br>
+
+      <strong>3.</strong> Normal login:<br>
+      &nbsp;&nbsp;Username: <code>admin</code><br>
+      &nbsp;&nbsp;Password: <code>SuperSecret@123</code>
+    </div>
+  </div>
+
+  <script>
+    // Fetch and display active security mode badge
+    fetch('/api/mode')
+      .then(r => r.json())
+      .then(info => {
+        const badge = document.getElementById('modeBadge');
+        if (info.secure) {
+          badge.className = 'mode-badge secure';
+          badge.textContent = '🔒 SECURE MODE (Parameterised)';
+        } else {
+          badge.className = 'mode-badge vulnerable';
+          badge.textContent = '🔓 VULNERABLE MODE (Raw Concatenation)';
+        }
+      })
+      .catch(() => {});
+
+    // Handle form submission
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const resultEl = document.getElementById('result');
+      const queryEl  = document.getElementById('queryDisplay');
+
+      resultEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+
+        // Show the SQL query for educational purposes
+        queryEl.textContent =
+          `SQL Executed (${data.mode === 'secure' ? 'Secure Parameterised' : 'Vulnerable Concatenated'}):\n` +
+          (data.query || `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`);
+        queryEl.style.display = 'block';
+
+        resultEl.style.display = 'block';
+        if (data.success) {
+          resultEl.className = 'result success';
+          resultEl.innerHTML =
+            `✅ <strong>${data.message}</strong><br>` +
+            `Email: ${data.user.email}<br>` +
+            `<a href="/dashboard" style="color:#7c3aed;">Go to Dashboard →</a>`;
+        } else {
+          resultEl.className = 'result error';
+          resultEl.textContent = '❌ ' + data.message;
+        }
+      } catch (err) {
+        resultEl.style.display = 'block';
+        resultEl.className = 'result error';
+        resultEl.textContent = '❌ Network error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

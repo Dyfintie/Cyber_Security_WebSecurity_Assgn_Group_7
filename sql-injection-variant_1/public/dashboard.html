@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Portal — Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      color: #e0e0e0;
+    }
+    .card {
+      background: rgba(255 255 255 / 0.06);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255 255 255 / 0.12);
+      border-radius: 16px;
+      padding: 2.5rem 2.2rem;
+      width: 100%; max-width: 480px;
+      box-shadow: 0 8px 32px rgba(0 0 0 / 0.45);
+      text-align: center;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 0.4rem; }
+    .info { font-size: 0.92rem; color: #a0a0b8; margin-bottom: 1.6rem; }
+    .field { margin-bottom: 0.9rem; text-align: left; }
+    .field span.label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+    .field span.value { display: block; font-size: 1rem; margin-top: 2px; }
+    button {
+      margin-top: 1.2rem;
+      padding: 0.65rem 1.8rem;
+      border: none; border-radius: 8px;
+      background: #e53e3e; color: #fff;
+      font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎉 Welcome!</h1>
+    <p class="info">You are logged in as:</p>
+    <div id="details"></div>
+    <button id="logoutBtn">Sign Out</button>
+  </div>
+  <script>
+    fetch('/api/me')
+      .then(r => {
+        if (!r.ok) { window.location.href = '/'; throw new Error('unauth'); }
+        return r.json();
+      })
+      .then(user => {
+        document.getElementById('details').innerHTML = `
+          <div class="field"><span class="label">Username</span><span class="value">${user.username}</span></div>
+          <div class="field"><span class="label">Role</span><span class="value">${user.role}</span></div>
+          <div class="field"><span class="label">Email</span><span class="value">${user.email}</span></div>
+        `;
+      })
+      .catch(() => {});
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/';
+    });
+  </script>
+</body>
+</html>

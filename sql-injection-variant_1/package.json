@@ -1,0 +1,15 @@
+{
+  "name": "sql-injection-auth-bypass-demo",
+  "version": "1.0.0",
+  "description": "Demonstrates SQL Injection (Authentication Bypass) — vulnerable and mitigated versions",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sql.js": "^1.10.2",
+    "express-session": "^1.17.3"
+  }
+}

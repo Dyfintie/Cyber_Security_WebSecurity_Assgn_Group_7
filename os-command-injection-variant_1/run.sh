@@ -13,11 +13,6 @@ if [ ! -d ".venv" ]; then
     ./.venv/bin/pip install -r requirements.txt
 fi
 
-if [ "$1" == "test" ]; then
-    echo "[*] Running automated test suite..."
-    ./.venv/bin/python test_exploit.py
-else
-    echo "[*] Starting Flask web server on http://127.0.0.1:5000 ..."
-    echo "[*] Press Ctrl+C to stop."
-    ./.venv/bin/python app.py
-fi
+echo "[*] Starting Flask web server on http://127.0.0.1:5000 ..."
+echo "[*] Press Ctrl+C to stop."
+./.venv/bin/python app.py
