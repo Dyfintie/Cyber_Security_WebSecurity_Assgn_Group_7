@@ -29,9 +29,10 @@ Each member is responsible for personally implementing, narrating, and defending
 | [SQL injection: authentication bypass](sql-injection-variant_1/README.md) | Node.js, Express, sql.js (SQLite) | http://localhost:3000 |
 | [OS command injection: in-band output](os-command-injection-variant_1/README.md) | Python, Flask, system `ping` | http://127.0.0.1:5000 |
 | [CSRF: POST-based forged action](csrf-post-variant_2/README.md) | Python, Flask (bank and attacker apps) | Bank: http://localhost:3000; attacker: http://localhost:3001 |
+| [CSRF: GET-based forged action](csrf-get-variant_1/README.md) | Node.js | Portal: http://localhost:3000; attacker: http://localhost:4000 |
 
 Each project README contains its setup instructions, vulnerable code path, exact exploit, root cause, implemented mitigation, and mitigation theory. The OS command injection project requires Linux, WSL, or macOS because it uses Unix-style `ping` arguments.
 
-Run the SQL and POST-based CSRF demos separately: both use port `3000`.
+Run the SQL, GET-based CSRF, and POST-based CSRF demos separately because their default victim apps use port `3000`.
 
-The XSS and GET-based CSRF implementations are not present in this checkout yet.
+The XSS implementation is not present in this checkout yet.
