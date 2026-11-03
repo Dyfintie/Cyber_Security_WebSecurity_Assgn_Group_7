@@ -54,16 +54,19 @@ cd csrf-post/
 ## Repository Structure
 
 ```
-├── README.md                    
-├── os-command-injection/       
-│   ├── app.py
-│   ├── templates/index.html
-│   ├── test_exploit.py
-│   ├── requirements.txt
-│   ├── run.sh
-│   ├── README.md
-│   ├── WALKTHROUGH.md
-├── sql-injection/               
-├── xss/                         
-└── csrf/                        
+ .
+├──  csrf-post
+│   ├──  attacker
+│   ├──  bank
+│   ├── 󰂺 README.md
+│   └──  run.sh
+├──  os-command-injection
+│   ├──  templates
+│   ├──  app.py
+│   ├── 󰂺 README.md
+│   ├──  requirements.txt
+│   ├──  run.sh
+│   ├──  test_exploit.py
+│   └──  WALKTHROUGH.md
+└── 󰂺 README.md                    
 ```
