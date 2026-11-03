@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · NimbusBank{% endblock %}
+{% block content %}
+<div class="grid">
+  <section class="card balance-card">
+    <div class="card-kicker">Savings Account · {{ key|capitalize }}</div>
+    <div class="balance">{{ user['balance']|money }}</div>
+    <div class="acct">A/C {{ user['account']|acct }} · IFSC NMBL0000111</div>
+  </section>
+
+  <section class="card">
+    <h2>Transfer money</h2>
+    <p class="muted small">Move funds instantly to any beneficiary account number.</p>
+    {% for category, msg in get_flashed_messages(with_categories=true) %}
+      <div class="flash flash-{{ category }}">{{ msg }}</div>
+    {% endfor %}
+    <form method="POST" action="{{ url_for('transfer') }}" class="transfer-form">
+      {# 🔧 Associated fix in bank/app.py: while the token check inside
+         POST /transfer is commented out, the attacker payload still passes
+         even though this token is submitted — the field is then ignored.
+         Once the check is uncommented, THIS hidden field is what makes
+         genuine in-app transfers succeed. #}
+      <input type="hidden" name="csrf_token" value="{{ session['csrf_token'] }}">
+      <label for="to_account">Beneficiary account number</label>
+      <input id="to_account" name="to_account" placeholder="0000 0000 0000" required>
+      <div class="row">
+        <div>
+          <label for="amount">Amount (₹)</label>
+          <input id="amount" name="amount" type="number" min="1" step="0.01" placeholder="5000.00" required>
+        </div>
+        <div>
+          <label for="note">Remarks (optional)</label>
+          <input id="note" name="note" placeholder="Rent, dinner, …">
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">Send money</button>
+    </form>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Recent activity</h2>
+  <table class="txns">
+    <thead><tr><th>Date &amp; time</th><th>Description</th><th class="num">Amount</th></tr></thead>
+    <tbody>
+      {% for t in txns %}
+      <tr>
+        <td class="muted">{{ t['ts'].strftime('%d %b %Y, %H:%M') }}</td>
+        <td>{{ t['label'] }}</td>
+        <td class="num {{ 'pos' if t['delta'] >= 0 else 'neg' }}">{{ '+' if t['delta'] >= 0 else '−' }}{{ t['delta']|abs|money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

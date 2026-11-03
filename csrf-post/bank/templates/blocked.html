@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Request blocked · NimbusBank{% endblock %}
+{% block content %}
+<div class="card blocked-card">
+  <div class="shield">🛡️</div>
+  <h1>Request blocked (HTTP 403)</h1>
+  <p>
+    NimbusBank rejected a money-transfer request because it arrived
+    <b>without a valid anti-CSRF token</b>.
+  </p>
+  <p class="muted small mono">
+    POST /transfer → 403 &nbsp;·&nbsp; CSRF_PROTECT=1 &nbsp;·&nbsp; synchronizer-token check failed
+  </p>
+  <p>
+    <a class="btn btn-primary" href="{{ url_for('dashboard') }}">Back to my dashboard</a>
+  </p>
+</div>
+{% endblock %}

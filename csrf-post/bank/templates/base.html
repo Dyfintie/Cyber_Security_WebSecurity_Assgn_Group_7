@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}NimbusBank{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='70' font-size='70' fill='%234f8cff'>N</text></svg>">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="{{ url_for('dashboard') if 'user' in session else url_for('login') }}">
+        <span class="brand-mark">◐</span> NimbusBank
+      </a>
+      {% if 'user' in session %}
+      <div class="nav-right">
+        <span class="{{ 'pill pill-green' if protect else 'pill pill-red' }}">
+          CSRF protection {{ 'ACTIVE' if protect else 'DISABLED' }}
+        </span>
+        <span class="nav-user">{{ user['name'] }} · {{ user['account']|acct }}</span>
+        <a class="nav-link" href="{{ url_for('logout') }}">Sign out</a>
+      </div>
+      {% endif %}
+    </div>
+  </nav>
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    NimbusBank is a fictional bank built for a course demonstration. No real funds are involved.
+  </footer>
+</body>
+</html>

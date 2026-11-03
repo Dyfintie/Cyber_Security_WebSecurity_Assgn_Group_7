@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Sign in · NimbusBank{% endblock %}
+{% block content %}
+<div class="login-card">
+  <div class="login-logo"><span class="brand-mark big">◐</span></div>
+  <h1>Welcome back</h1>
+  <p class="muted">Sign in to your NimbusBank internet banking account.</p>
+
+  {% for category, msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash flash-{{ category }}">{{ msg }}</div>
+  {% endfor %}
+
+  <form method="POST" action="{{ url_for('login') }}">
+    <label for="username">Customer ID</label>
+    <input id="username" name="username" placeholder="e.g. alice" autocomplete="off" required>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" placeholder="••••••••" required>
+    <button class="btn btn-primary btn-block" type="submit">Sign in securely</button>
+  </form>
+
+  <p class="hint">Demo accounts — <b>alice / nimbus123</b> &nbsp;·&nbsp; <b>attacker / evil123</b></p>
+</div>
+{% endblock %}
