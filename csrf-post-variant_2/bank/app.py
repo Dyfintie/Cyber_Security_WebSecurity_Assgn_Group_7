@@ -5,7 +5,7 @@ Variant  : POST-based forged action (auto-submitting form)
 Course   : Cyber Security (IT-30001) | Assignment: Web Server Security
 
 Run (VULNERABLE — the shipped state):
-    python3 bank/app.py        (or ./run.sh from the csrf/ folder)
+    python3 bank/app.py        (or ./run.sh from the csrf-post-variant_2/ folder)
 
 HOW TO SECURE IT BY HAND (this is the mitigation the assignment asks for):
     Scroll to the ⚠️ VULNERABLE CODE PATH inside `POST /transfer` below and
@@ -19,7 +19,7 @@ THE VULNERABILITY
 `POST /transfer` changes account state (moves money) but verifies only the
 session cookie. Browsers attach that cookie automatically to EVERY request
 to the bank — including requests a third-party page tricks the browser into
-sending. An attacker's page (csrf/attacker/app.py) can therefore auto-submit
+sending. An attacker's page (csrf-post-variant_2/attacker/app.py) can therefore auto-submit
 a hidden <form method="POST"> targeting http://localhost:3000/transfer and
 the browser will dutifully attach the victim's session cookie and drain
 their account.

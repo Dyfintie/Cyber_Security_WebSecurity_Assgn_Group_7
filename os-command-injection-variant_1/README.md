@@ -1,6 +1,6 @@
 # OS Command Injection: In-Band Output
 
-**Variant 1.** A Flask ping diagnostic demonstrates command injection by returning the injected command's output in the HTTP response. See the [group README](../README.md) for ownership and submission details.
+**Variant 1.** A Flask ping diagnostic demonstrates command injection by returning the injected command's output in the HTTP response. See the [group README](../README.md) for team ownership.
 
 ## Run locally
 

@@ -1,6 +1,6 @@
 # SQL Injection: Authentication Bypass
 
-**Variant 1.** An employee portal demonstrates how SQL injection bypasses authentication and how parameter binding blocks the same payload. See the [group README](../README.md) for ownership and submission details.
+**Variant 1.** An employee portal demonstrates how SQL injection bypasses authentication and how parameter binding blocks the same payload. See the [group README](../README.md) for team ownership.
 
 The application uses Node.js, Express, and an in-memory SQLite database through `sql.js`. The database is seeded on startup and resets whenever the server restarts; no separate database server is needed.
 
