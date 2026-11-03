@@ -1,11 +1,5 @@
-# Web Server Security: Exploitation and Mitigation Lab
-
-**Course**: Cyber Security (IT-30001) — Autumn Semester 2026  
-**Department**: Department of Information Technology  
-**Institution**: Indian Institute of Information Technology Allahabad (IIIT Allahabad)  
-**Instructor**: Dr. Soumyadev Maity  
-
----
+# XSS Reflected Vulnerability
+Aman Kashyap
 
 ## Quick Start & Installation
 
